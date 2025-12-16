@@ -133,3 +133,4 @@ if function_choice == "🔮 Single Sample Prediction":
 # ===================== 5. Footer =====================
 st.markdown("---")
 st.markdown("© 2025 Hypoproteinemia Prediction Model | Streamlit Web App")
+
