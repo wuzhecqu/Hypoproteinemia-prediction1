@@ -50,7 +50,7 @@ def load_model():
             # 替换为你实际的特征范围（从本地Python 3.8环境中查）
             if feat == "Age":
                 feature_ranges[feat] = (18.0, 80.0, 50.0)
-            elif feat == "Surgery_time":
+            elif feat == "Surgery.time":
                 feature_ranges[feat] = (30.0, 300.0, 120.0)
             elif feat == "BMI":
                 feature_ranges[feat] = (18.0, 35.0, 24.0)
@@ -133,4 +133,5 @@ if function_choice == "🔮 Single Sample Prediction":
 # ===================== 5. Footer =====================
 st.markdown("---")
 st.markdown("© 2025 Hypoproteinemia Prediction Model | Streamlit Web App")
+
 
