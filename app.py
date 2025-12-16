@@ -33,6 +33,7 @@ def load_model():
         imputer = model_metadata.get('imputer')
         scaler = model_metadata.get('scaler')
         feature_cols = model_metadata.get('feature_cols')
+        # 优先从模型文件读取特征描述（100%匹配，避免手动写错）
         feature_descs = model_metadata.get('feature_descriptions', {})
         target_mapping = model_metadata.get('target_mapping', {0: 'No Hypoproteinemia', 1: 'Hypoproteinemia'})
 
@@ -41,6 +42,19 @@ def load_model():
             st.error("❌ Model corrupted! Missing core components (model/imputer/scaler/feature_cols)")
             st.stop()
 
+        # 🔥 自动适配所有特征，彻底避免KeyError
+        feature_ranges = {}
+        for feat in feature_cols:
+            # 给所有特征设置默认范围（无需手动写）
+            feature_ranges[feat] = (0.0, 100.0, 50.0)
+            # 如果模型文件里没有该特征的描述，自动生成
+            if feat not in feature_descs:
+                feature_descs[feat] = f"{feat} (Clinical Feature)"
+
+        return model, imputer, scaler, feature_cols, feature_descs, target_mapping, feature_ranges
+    except Exception as e:
+        st.error(f"❌ Model loading failed: {str(e)}")
+        st.stop()
         # 硬编码特征范围（替代pandas读取验证集，避免pandas依赖）
         # 你可以根据训练数据的特征范围手动填写，示例：
         feature_ranges = {}
@@ -133,5 +147,6 @@ if function_choice == "🔮 Single Sample Prediction":
 # ===================== 5. Footer =====================
 st.markdown("---")
 st.markdown("© 2025 Hypoproteinemia Prediction Model | Streamlit Web App")
+
 
 
