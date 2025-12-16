@@ -4,7 +4,7 @@ import pickle
 import os
 import warnings
 import shap  # 新增：导入SHAP
-
+import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 
 # ===================== 0. Global Configuration =====================
@@ -142,43 +142,52 @@ if function_choice == "🔮 Single Sample Prediction":
         # 将SHAP HTML嵌入Streamlit
         st.components.v1.html(shap_html.html(), height=300)
 
-# ===================== 5. SHAP特征重要性（新增功能） =====================
+
+# ===================== 5. SHAP特征重要性（新增功能，无pandas） =====================
 elif function_choice == "📊 Feature Importance (SHAP)":
     st.title("Model Interpretability - SHAP Feature Importance")
     st.markdown("### Global Feature Importance (Mean Absolute SHAP Value)")
 
-    # 生成示例数据（或加载训练集的缩放后数据，这里用随机数据演示）
-    # 若有训练集，可替换为真实数据：X_train_scaled = scaler.transform(imputer.transform(X_train))
+    # 生成示例数据（模拟训练集，避免pandas）
     np.random.seed(42)
-    sample_data = np.random.rand(100, len(feature_cols))  # 随机生成100个样本
-    sample_data_scaled = scaler.transform(sample_data)  # 缩放
+    sample_data = np.random.rand(100, len(feature_cols))  # 100个样本，特征数匹配
+    sample_data_scaled = scaler.transform(sample_data)  # 按训练时的规则缩放
     
-    # 计算SHAP值
+    # 计算SHAP值（适配LightGBM二分类模型）
     shap_values = explainer.shap_values(sample_data_scaled)
+    # 二分类模型返回list[负类SHAP值, 正类SHAP值]，取正类
     shap_values_pos = shap_values[1] if isinstance(shap_values, list) else shap_values
     
-    # 计算特征重要性（平均绝对SHAP值）
+    # 计算全局特征重要性（平均绝对SHAP值）
     shap_importance = np.abs(shap_values_pos).mean(axis=0)
-    importance_df = np.column_stack((feature_cols, shap_importance))
-    importance_df = importance_df[np.argsort(importance_df[:, 1])[::-1]]  # 降序排序
+    
+    # 纯numpy排序（特征名+重要性，降序）
+    feat_imp_pairs = list(zip(feature_cols, shap_importance))
+    feat_imp_pairs.sort(key=lambda x: x[1], reverse=True)
 
-    # 显示特征重要性表格
-    st.dataframe(
-        pd.DataFrame(importance_df, columns=["Feature", "SHAP Importance"]).astype({"SHAP Importance": float}),
-        use_container_width=True
-    )
+    # 纯Streamlit显示特征重要性表格（无pandas）
+    st.markdown("#### 🎯 Feature Importance Ranking")
+    table_data = [["Rank", "Feature", "SHAP Importance"]]
+    for i, (feat, imp) in enumerate(feat_imp_pairs, 1):
+        table_data.append([i, feat, round(float(imp), 4)])
+    st.table(table_data)  # Streamlit原生表格，无需pandas
 
-    # 渲染SHAP Summary Plot（JS版本）
-    st.markdown("### SHAP Summary Plot (Feature Impact on Prediction)")
-    shap_summary = shap.summary_plot(
+    # 显示SHAP Summary Plot（模型全局可解释性）
+    st.markdown("### 📉 SHAP Summary Plot")
+    st.info("Each dot represents a SHAP value for a feature – the larger the dot, the greater the impact on prediction.")
+    # 生成Summary Plot并在Streamlit中显示
+    fig, ax = plt.subplots(figsize=(10, 6))
+    shap.summary_plot(
         shap_values_pos,
         sample_data_scaled,
         feature_names=feature_cols,
-        show=False,
-        plot_type="dot"
+        ax=ax,
+        plot_type="dot",
+        show=False
     )
-    st.pyplot(shap_summary)
+    st.pyplot(fig, bbox_inches='tight')
 
 # ===================== 6. Footer =====================
 st.markdown("---")
 st.markdown("© 2025 Hypoproteinemia Prediction Model | Streamlit Web App")
+
