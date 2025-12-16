@@ -1,1 +1,9 @@
+[server]
+headless = true
 
+[deprecation]
+showPyplotGlobalUse = false
+
+[install]
+# 强制禁用uv pip，用标准pip安装依赖
+useUv = false
